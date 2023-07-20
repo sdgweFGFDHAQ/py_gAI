@@ -177,9 +177,11 @@ def main():
     # 初始化基本配置
     pygame.init()
     clock = time.Clock()
+    font = pygame.font.Font(None, 32)
+
+    pygame.display.set_caption("自动寻路测试")
     WINDOW_SIZE = [(MARGIN + WIDTH) * COLS + MARGIN, (MARGIN + HEIGHT) * ROWS + MARGIN]
     screen = pygame.display.set_mode(WINDOW_SIZE)
-    pygame.display.set_caption("自动寻路测试")
     grid = Grid()
 
     done = False
@@ -189,6 +191,9 @@ def main():
         # 处理事件
         game_state, start, end = handle_events(grid, start, end)
         # 绘制地图
+        text = font.render("测试开始", True, BLACK)
+        text_rect = text.get_rect(center=screen.get_rect().center)
+        screen.blit(text, text_rect)
         grid.draw(screen)
         if start is not None and end is not None:
             path = astar(start, end, grid)
