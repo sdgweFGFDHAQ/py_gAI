@@ -1,7 +1,13 @@
 import pygame
+from pygame.font import Font
 from pygame.locals import *
 from pygame import time
 import heapq
+
+# 全局初始化
+pygame.init()
+clock = time.Clock()
+font = Font(None, 32)
 
 # 颜色配置
 BLACK = (0, 0, 0)
@@ -30,10 +36,115 @@ OBSTACLE_POINT = 2
 START_POINT = 11
 END_POINT = -11
 
+# 定义测试状态
+STATE_START = 0
+STATE_HELP = 1
+STATE_PLAYING = 2
+STATE_GAME_OVER = 3
+
 # 寻路状态
 STOP_STATE = -1
 START_STATE = 1
 PAUSE_STATE = 0
+
+
+# Define the grid class
+class Grid:
+    def __init__(self):
+        self.grid = [[0 for j in range(COLS)] for i in range(ROWS)]
+
+    def neighbors(self, node):
+        neighbors = []
+        if node[0] > 0:
+            neighbors.append((node[0] - 1, node[1]))
+        if node[0] < ROWS - 1:
+            neighbors.append((node[0] + 1, node[1]))
+        if node[1] > 0:
+            neighbors.append((node[0], node[1] - 1))
+        if node[1] < COLS - 1:
+            neighbors.append((node[0], node[1] + 1))
+        return neighbors
+
+    def cost(self, current, neighbor):
+        return 1
+
+    def draw(self, screen):
+        for i in range(ROWS):
+            for j in range(COLS):
+                color = WHITE
+                if self.grid[i][j] == OBSTACLE_POINT:
+                    color = BLACK
+                elif self.grid[i][j] == END_POINT:
+                    color = RED
+                elif self.grid[i][j] == START_POINT:
+                    color = BLUE
+                pygame.draw.rect(screen, color,
+                                 [(MARGIN + WIDTH) * j + MARGIN, (MARGIN + HEIGHT) * i + MARGIN, WIDTH, HEIGHT])
+
+
+# 定义游戏状态切换函数
+def set_app_state(screen, state):
+    global current_state
+    current_state = state
+    if current_state == STATE_START:
+        # 游戏开始状态
+        text = font.render("点击空格键开始游戏", True, WHITE)
+        text_rect = text.get_rect(center=screen.get_rect().center)
+        screen.blit(text, text_rect)
+    elif current_state == STATE_HELP:
+        # 帮助状态
+        text = font.render("这是一个简单的 A*算法 寻路测试", True, WHITE)
+        text_rect = text.get_rect(center=screen.get_rect().center)
+        screen.blit(text, text_rect)
+    elif current_state == STATE_PLAYING:
+        # 游戏进行状态
+        pass
+    elif current_state == STATE_GAME_OVER:
+        # 游戏结束状态
+        text = font.render("游戏结束，点击空格键重新开始", True, WHITE)
+        text_rect = text.get_rect(center=screen.get_rect().center)
+        screen.blit(text, text_rect)
+
+
+def handle_events(screen, grid, start, end):
+    game_state = False
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            pygame.quit()
+            quit()
+        elif event.type == MOUSEBUTTONDOWN:
+            pos = pygame.mouse.get_pos()
+            row = pos[1] // (HEIGHT + MARGIN)
+            col = pos[0] // (WIDTH + MARGIN)
+            if event.button == 1:
+                if grid.grid[row][col] == BLANK_POINT:
+                    grid.grid[row][col] = OBSTACLE_POINT
+                else:
+                    if grid.grid[row][col] == OBSTACLE_POINT:
+                        pass
+                    if grid.grid[row][col] == START_POINT:
+                        start = None
+                    elif grid.grid[row][col] == END_POINT:
+                        end = None
+                    grid.grid[row][col] = BLANK_POINT
+            elif event.button == 3:
+                if start is None:
+                    start = (row, col)
+                    grid.grid[row][col] = START_POINT
+                elif end is None and grid.grid[row][col] != START_POINT:
+                    end = (row, col)
+                    grid.grid[row][col] = END_POINT
+        elif event.type == KEYDOWN:
+            if event.key == K_SPACE:
+                if current_state == STATE_START:
+                    set_app_state(screen, STATE_PLAYING)
+                elif current_state == STATE_HELP:
+                    set_app_state(screen, STATE_PLAYING)
+                elif current_state == STATE_PLAYING:
+                    pass
+                elif current_state == STATE_GAME_OVER:
+                    set_app_state(screen, STATE_START)
+    return game_state, start, end
 
 
 # 曼哈顿距离
@@ -104,75 +215,6 @@ def astar(start, end, grid):
     return None
 
 
-# Define the grid class
-class Grid:
-    def __init__(self):
-        self.grid = [[0 for j in range(COLS)] for i in range(ROWS)]
-
-    def neighbors(self, node):
-        neighbors = []
-        if node[0] > 0:
-            neighbors.append((node[0] - 1, node[1]))
-        if node[0] < ROWS - 1:
-            neighbors.append((node[0] + 1, node[1]))
-        if node[1] > 0:
-            neighbors.append((node[0], node[1] - 1))
-        if node[1] < COLS - 1:
-            neighbors.append((node[0], node[1] + 1))
-        return neighbors
-
-    def cost(self, current, neighbor):
-        return 1
-
-    def draw(self, screen):
-        for i in range(ROWS):
-            for j in range(COLS):
-                color = WHITE
-                if self.grid[i][j] == OBSTACLE_POINT:
-                    color = BLACK
-                elif self.grid[i][j] == END_POINT:
-                    color = RED
-                elif self.grid[i][j] == START_POINT:
-                    color = BLUE
-                pygame.draw.rect(screen, color,
-                                 [(MARGIN + WIDTH) * j + MARGIN, (MARGIN + HEIGHT) * i + MARGIN, WIDTH, HEIGHT])
-
-
-def handle_events(grid, start, end):
-    game_state = False
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            pygame.quit()
-            quit()
-        elif event.type == MOUSEBUTTONDOWN:
-            pos = pygame.mouse.get_pos()
-            row = pos[1] // (HEIGHT + MARGIN)
-            col = pos[0] // (WIDTH + MARGIN)
-            if event.button == 1:
-                if grid.grid[row][col] == BLANK_POINT:
-                    grid.grid[row][col] = OBSTACLE_POINT
-                else:
-                    if grid.grid[row][col] == OBSTACLE_POINT:
-                        pass
-                    if grid.grid[row][col] == START_POINT:
-                        start = None
-                    elif grid.grid[row][col] == END_POINT:
-                        end = None
-                    grid.grid[row][col] = BLANK_POINT
-            elif event.button == 3:
-                if start is None:
-                    start = (row, col)
-                    grid.grid[row][col] = START_POINT
-                elif end is None and grid.grid[row][col] != START_POINT:
-                    end = (row, col)
-                    grid.grid[row][col] = END_POINT
-        elif event.type == KEYDOWN:
-            if event.key == K_SPACE:
-                if start is not None and end is not None:
-                    game_state = True
-    return game_state, start, end
-
-
 def draw_path(screen, path):
     for node in path:
         pygame.draw.rect(screen, GREEN,
@@ -181,25 +223,19 @@ def draw_path(screen, path):
 
 def main():
     # 初始化基本配置
-    pygame.init()
-    clock = time.Clock()
-    font = pygame.font.Font(None, 32)
-
     pygame.display.set_caption("自动寻路测试")
     WINDOW_SIZE = [(MARGIN + WIDTH) * COLS + MARGIN, (MARGIN + HEIGHT) * ROWS + MARGIN]
     screen = pygame.display.set_mode(WINDOW_SIZE)
     grid = Grid()
 
-    done = False
+    set_app_state(screen, STATE_START)
+    running = False
     start = None
     end = None
-    while not done:
+    while not running:
         # 处理事件
-        game_state, start, end = handle_events(grid, start, end)
+        game_state, start, end = handle_events(screen, grid, start, end)
         # 绘制地图
-        text = font.render("测试开始", True, BLACK)
-        text_rect = text.get_rect(center=screen.get_rect().center)
-        screen.blit(text, text_rect)
         grid.draw(screen)
         if start is not None and end is not None:
             path = astar(start, end, grid)
