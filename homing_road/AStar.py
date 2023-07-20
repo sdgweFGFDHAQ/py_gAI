@@ -35,6 +35,7 @@ STOP_STATE = -1
 START_STATE = 1
 PAUSE_STATE = 0
 
+
 # 曼哈顿距离
 def heuristic(a, b):
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
@@ -96,6 +97,7 @@ def astar(start, end, grid):
     # 没有找到路径
     return None
 
+
 # Define the grid class
 class Grid:
     def __init__(self):
@@ -131,7 +133,7 @@ class Grid:
 
 
 def handle_events(grid, start, end):
-    game_state = None
+    game_state = False
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
@@ -140,30 +142,29 @@ def handle_events(grid, start, end):
             pos = pygame.mouse.get_pos()
             row = pos[1] // (HEIGHT + MARGIN)
             col = pos[0] // (WIDTH + MARGIN)
-            point = grid.grid[row][col]
             if event.button == 1:
-                if point == BLANK_POINT:
-                    point = OBSTACLE_POINT
+                if grid.grid[row][col] == BLANK_POINT:
+                    grid.grid[row][col] = OBSTACLE_POINT
                 else:
-                    if point == OBSTACLE_POINT:
-                        continue
-                    elif point == START_POINT:
+                    if grid.grid[row][col] == OBSTACLE_POINT:
+                        pass
+                    if grid.grid[row][col] == START_POINT:
                         start = None
-                    elif point == END_POINT:
+                    elif grid.grid[row][col] == END_POINT:
                         end = None
-                    point = BLANK_POINT
+                    grid.grid[row][col] = BLANK_POINT
             elif event.button == 3:
                 if start is None:
                     start = (row, col)
-                    point = START_POINT
+                    grid.grid[row][col] = START_POINT
                 elif end is None:
                     end = (row, col)
-                    point = END_POINT
+                    grid.grid[row][col] = END_POINT
         elif event.type == KEYDOWN:
             if event.key == K_SPACE:
                 if start is not None and end is not None:
                     game_state = True
-    return game_state
+    return game_state, start, end
 
 
 def draw_path(screen, path):
@@ -186,7 +187,7 @@ def main():
     end = None
     while not done:
         # 处理事件
-        game_state = handle_events(grid, start, end)
+        game_state, start, end = handle_events(grid, start, end)
         # 绘制地图
         grid.draw(screen)
         if start is not None and end is not None:
