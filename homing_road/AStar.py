@@ -1,5 +1,6 @@
 import pygame
 from pygame.locals import *
+from pygame import time
 import heapq
 
 # 颜色配置
@@ -23,6 +24,16 @@ COLS = 20
 START = (0, 0)
 END = (ROWS - 1, COLS - 1)
 
+# 地图网格实体
+BLANK_POINT = 0
+OBSTACLE_POINT = 2
+START_POINT = 11
+END_POINT = -11
+
+# 寻路状态
+STOP_STATE = -1
+START_STATE = 1
+PAUSE_STATE = 0
 
 # 曼哈顿距离
 def heuristic(a, b):
@@ -30,18 +41,21 @@ def heuristic(a, b):
 
 
 def astar(start, end, grid):
-    # Initialize the open and closed sets
-    open_set = [(0, start)]  # priority queue of nodes to explore
-    closed_set = set()  # set of nodes already explored
-    came_from = {}  # dictionary of nodes mapping to their parent nodes
-    g_score = {start: 0}  # cost of the path from start to a given node
-    f_score = {start: heuristic(start, end)}  # estimated total cost from start to end through a given node
+    # 初始化搜索
+    open_set = [(0, start)]  # 从起点开始搜索
+    closed_set = set()  # 记录已经搜索过的节点
+    came_from = {}  # 记录每个节点的父节点
+    g_score = {start: 0}  # 记录从起点到每个节点的实际代价
+    f_score = {start: heuristic(start, end)}  # 记录从起点到每个节点的估计代价
+    current = None
+    turning_point = None
 
     while open_set:
-        # Get the node with the lowest f_score
+        # 从未搜索过的节点中选择 f_score 最小的节点
         current = heapq.heappop(open_set)[1]
-
-        # If we have reached the end, reconstruct the path and return it
+        # 将当前节点标记为已搜索
+        closed_set.add(current)
+        # 如果当前节点是终点，搜索结束
         if current == end:
             path = []
             while current in came_from:
@@ -50,18 +64,14 @@ def astar(start, end, grid):
             path.append(start)
             path.reverse()
             return path
-
-        # Otherwise, add the current node to the closed set and explore its neighbors
-        closed_set.add(current)
+        # 对当前节点的所有邻居进行探索
         for neighbor in grid.neighbors(current):
-            # If the neighbor has already been explored, skip it
-            if neighbor in closed_set:
+            # 如果邻居已经被搜索过，或者是障碍物，则跳过
+            if neighbor in closed_set or grid.grid[neighbor[0]][neighbor[1]] == OBSTACLE_POINT:
                 continue
-
-            # Calculate the cost of the path from start to the neighbor through the current node
+            # 计算从起点到邻居节点的代价
             tentative_g_score = g_score[current] + grid.cost(current, neighbor)
-
-            # If the neighbor is not in the open set or the new path to it is cheaper than the previous one, update its scores
+            # 如果邻居节点没有被搜索过，或者从起点到邻居节点的代价更小，则更新邻居节点的代价和父节点
             if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
                 came_from[neighbor] = current
                 g_score[neighbor] = tentative_g_score
@@ -69,9 +79,22 @@ def astar(start, end, grid):
                 if neighbor not in [node[1] for node in open_set]:
                     heapq.heappush(open_set, (f_score[neighbor], neighbor))
 
-    # If we have explored all nodes and haven't found the end, return an empty path
-    return []
+        if current != start and len(grid.neighbors(current)) == 1:
+            if turning_point is None:
+                turning_point = current
+            elif current == grid.neighbors(turning_point)[0]:
+                # 回溯到拐点重新开始搜索
+                start = turning_point
+                turning_point = None
+                open_set = [(0, start)]
+                came_from = {}
+                g_score = {start: 0}
+                f_score = {start: heuristic(start, end)}
+                closed_set = set()
+                break
 
+    # 没有找到路径
+    return None
 
 # Define the grid class
 class Grid:
@@ -97,70 +120,81 @@ class Grid:
         for i in range(ROWS):
             for j in range(COLS):
                 color = WHITE
-                if self.grid[i][j] == 1:
+                if self.grid[i][j] == OBSTACLE_POINT:
                     color = BLACK
-                elif self.grid[i][j] == -1:
+                elif self.grid[i][j] == END_POINT:
                     color = RED
-                elif self.grid[i][j] == -2:
+                elif self.grid[i][j] == START_POINT:
                     color = BLUE
                 pygame.draw.rect(screen, color,
                                  [(MARGIN + WIDTH) * j + MARGIN, (MARGIN + HEIGHT) * i + MARGIN, WIDTH, HEIGHT])
 
 
+def handle_events(grid, start, end):
+    game_state = None
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            pygame.quit()
+            quit()
+        elif event.type == MOUSEBUTTONDOWN:
+            pos = pygame.mouse.get_pos()
+            row = pos[1] // (HEIGHT + MARGIN)
+            col = pos[0] // (WIDTH + MARGIN)
+            point = grid.grid[row][col]
+            if event.button == 1:
+                if point == BLANK_POINT:
+                    point = OBSTACLE_POINT
+                else:
+                    if point == OBSTACLE_POINT:
+                        continue
+                    elif point == START_POINT:
+                        start = None
+                    elif point == END_POINT:
+                        end = None
+                    point = BLANK_POINT
+            elif event.button == 3:
+                if start is None:
+                    start = (row, col)
+                    point = START_POINT
+                elif end is None:
+                    end = (row, col)
+                    point = END_POINT
+        elif event.type == KEYDOWN:
+            if event.key == K_SPACE:
+                if start is not None and end is not None:
+                    game_state = True
+    return game_state
+
+
+def draw_path(screen, path):
+    for node in path:
+        pygame.draw.rect(screen, GREEN,
+                         [(MARGIN + WIDTH) * node[1] + MARGIN, (MARGIN + HEIGHT) * node[0] + MARGIN, WIDTH, HEIGHT])
+
+
 def main():
     # 初始化基本配置
     pygame.init()
+    clock = time.Clock()
     WINDOW_SIZE = [(MARGIN + WIDTH) * COLS + MARGIN, (MARGIN + HEIGHT) * ROWS + MARGIN]
     screen = pygame.display.set_mode(WINDOW_SIZE)
     pygame.display.set_caption("自动寻路测试")
     grid = Grid()
+
+    done = False
     start = None
     end = None
-
-    # 开始寻路
-    done = False
     while not done:
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                done = True
-            # 鼠标点击响应设置障碍
-            elif event.type == MOUSEBUTTONDOWN:
-                # mouse click
-                pos = pygame.mouse.get_pos()
-                row = pos[1] // (HEIGHT + MARGIN)
-                col = pos[0] // (WIDTH + MARGIN)
-                # 左键设置
-                if event.button == 1:
-                    grid.grid[row][col] = 1
-                # 右键取消
-                elif event.button == 3:
-                    if grid.grid[row][col] == -2:
-                        start = None
-                    elif grid.grid[row][col] == -1:
-                        end = None
-                    grid.grid[row][col] = 0
-                # 中键设置起点和终点
-                elif event.button == 2:
-                    if start is None:
-                        start = (row, col)
-                        grid.grid[row][col] = -2
-                    elif end is None:
-                        end = (row, col)
-                        grid.grid[row][col] = -1
-            # 如果起点和终点设置好了, 开始运行自动寻路并绘制
-            elif event.type == KEYDOWN:
-                if event.key == K_UP:
-                    if start is not None and end is not None:
-                        path = astar(start, end, grid)
-                        for node in path:
-                            pygame.draw.rect(screen, GREEN,
-                                             [(MARGIN + WIDTH) * node[1] + MARGIN, (MARGIN + HEIGHT) * node[0] + MARGIN,
-                                              WIDTH,
-                                              HEIGHT])
-
+        # 处理事件
+        game_state = handle_events(grid, start, end)
+        # 绘制地图
         grid.draw(screen)
-        # 刷新频率
-        pygame.display.flip()
+        if start is not None and end is not None:
+            path = astar(start, end, grid)
+            if path:
+                draw_path(screen, path)
+        pygame.display.update()
+        clock.tick(60)
     pygame.quit()
 
 
