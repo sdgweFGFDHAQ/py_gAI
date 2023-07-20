@@ -64,6 +64,12 @@ def astar(start, end, grid):
                 current = came_from[current]
             path.append(start)
             path.reverse()
+            # 不包括 起点和终点
+            try:
+                path.remove(start)
+                path.remove(end)
+            except ValueError:
+                pass
             return path
         # 对当前节点的所有邻居进行探索
         for neighbor in grid.neighbors(current):
@@ -157,7 +163,7 @@ def handle_events(grid, start, end):
                 if start is None:
                     start = (row, col)
                     grid.grid[row][col] = START_POINT
-                elif end is None:
+                elif end is None and grid.grid[row][col] != START_POINT:
                     end = (row, col)
                     grid.grid[row][col] = END_POINT
         elif event.type == KEYDOWN:
