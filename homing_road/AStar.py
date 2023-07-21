@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 import pygame
 from pygame.font import Font
@@ -22,10 +23,10 @@ WIDTH = 20
 HEIGHT = 20
 # 边框粗细
 MARGIN = 2
-
 # 地图大小
-ROWS = 20
-COLS = 20
+ROWS = 30
+COLS = 40
+WINDOW_SIZE = [(MARGIN + WIDTH) * COLS + MARGIN, (MARGIN + HEIGHT) * ROWS + MARGIN]
 
 # 默认起点和终点
 START = (0, 0)
@@ -47,6 +48,13 @@ STATE_GAME_OVER = 3
 STOP_STATE = -1
 START_STATE = 1
 PAUSE_STATE = 0
+
+prefix = "E:\\pyProjects\\py_gAI\\homing_road\\"
+background = pygame.transform.scale(pygame.image.load(prefix + r"city.png"),WINDOW_SIZE)
+obstacle = pygame.transform.scale(pygame.image.load(prefix + r"obstacle.png"),(WIDTH, HEIGHT))
+role = pygame.transform.scale(pygame.image.load(prefix + r"lxb.png"), (WIDTH, HEIGHT))
+store = pygame.transform.scale(pygame.image.load(prefix + r"store.png"), (WIDTH, HEIGHT))
+road = pygame.transform.scale(pygame.image.load(prefix + r"road.png"), (WIDTH, HEIGHT))
 
 
 # Define the grid class
@@ -72,16 +80,21 @@ class Grid:
     def draw(self, screen):
         for i in range(ROWS):
             for j in range(COLS):
-                color = WHITE
-                if self.grid[i][j] == OBSTACLE_POINT:
-                    color = BLACK
-                elif self.grid[i][j] == END_POINT:
-                    color = RED
-                elif self.grid[i][j] == START_POINT:
-                    color = BLUE
-                pygame.draw.rect(screen, color,
-                                 [(MARGIN + WIDTH) * j + MARGIN, (MARGIN + HEIGHT) * i + MARGIN, WIDTH, HEIGHT])
-
+                if self.grid[i][j] == BLANK_POINT:
+                    # color = WHITE
+                    continue
+                else:
+                    if self.grid[i][j] == OBSTACLE_POINT:
+                        color = BLACK
+                        screen.blit(obstacle, ((MARGIN + WIDTH) * j + MARGIN, (MARGIN + HEIGHT) * i + MARGIN))
+                    elif self.grid[i][j] == END_POINT:
+                        color = RED
+                        screen.blit(store, ((MARGIN + WIDTH) * j + MARGIN, (MARGIN + HEIGHT) * i + MARGIN))
+                    elif self.grid[i][j] == START_POINT:
+                        color = BLUE
+                        screen.blit(role, ((MARGIN + WIDTH) * j + MARGIN, (MARGIN + HEIGHT) * i + MARGIN))
+                # pygame.draw.rect(screen, color,
+                #                  [(MARGIN + WIDTH) * j + MARGIN, (MARGIN + HEIGHT) * i + MARGIN, WIDTH, HEIGHT])
 
 # 定义游戏状态切换函数
 def set_app_state(screen, state):
@@ -234,15 +247,16 @@ def astar(start, end, grid):
 
 
 def draw_path(screen, path):
+    # for node in path:
+    #     pygame.draw.rect(screen, GREEN,
+    #                      [(MARGIN + WIDTH) * node[1] + MARGIN, (MARGIN + HEIGHT) * node[0] + MARGIN, WIDTH, HEIGHT])
     for node in path:
-        pygame.draw.rect(screen, GREEN,
-                         [(MARGIN + WIDTH) * node[1] + MARGIN, (MARGIN + HEIGHT) * node[0] + MARGIN, WIDTH, HEIGHT])
+        screen.blit(road, ((MARGIN + WIDTH) * node[1] + MARGIN, (MARGIN + HEIGHT) * node[0] + MARGIN))
 
 
 def main():
     # 初始化基本配置
     pygame.display.set_caption("自动寻路测试")
-    WINDOW_SIZE = [(MARGIN + WIDTH) * COLS + MARGIN, (MARGIN + HEIGHT) * ROWS + MARGIN]
     screen = pygame.display.set_mode(WINDOW_SIZE)
     grid = Grid()
 
@@ -256,6 +270,7 @@ def main():
         tgs, start, end = handle_events(grid, start, end)
         game_state = tgs
         # 绘制地图
+        screen.blit(background, (0, 0))
         grid.draw(screen)
         set_app_state(screen, game_state)
         if start is not None and end is not None:
