@@ -7,7 +7,6 @@ import heapq
 
 # 全局初始化
 pygame.init()
-pygame.freetype.init()
 clock = time.Clock()
 
 # 颜色配置
@@ -90,24 +89,28 @@ def set_app_state(screen, state):
     current_state = state
     if current_state == STATE_START:
         # 游戏开始状态
-        font = Font("C:\Windows\Fonts\simkai.ttf", 28)
+        font = Font("C:\\Windows\\Fonts\\simkai.ttf", 28)
         text = font.render("点击空格键开始测试", True, BLACK)
         text_rect = text.get_rect(center=screen.get_rect().center)
         screen.blit(text, text_rect)
     elif current_state == STATE_HELP:
         # 帮助状态
-        font = Font(r"C:\Windows\Fonts\simkai.ttf", 24)
-        text = font.render("这是一个简单的 A*算法 寻路测试\n"
-                           "使用鼠标左键放置/取消障碍物\n"
-                           "使用鼠标右键放置起点及终点，并可用左键取消", True, BLACK)
-        text_rect = text.get_rect(center=screen.get_rect().center)
-        screen.blit(text, text_rect)
+        font = Font(r"C:\\Windows\\Fonts\\simkai.ttf", 20)
+        text = "这是一个简单的 A*算法 寻路测试\n" \
+               "使用鼠标左键放置/取消障碍物\n" \
+               "使用鼠标右键放置起点及终点，并可用左键取消"
+        text_list = text.split("\n")
+        y = 150
+        for t in text_list:
+            rendered_line = font.render(t, True, BLACK)
+            screen.blit(rendered_line, (20, y))
+            y += font.get_linesize()
     elif current_state == STATE_PLAYING:
         # 游戏进行状态
         pass
     elif current_state == STATE_GAME_OVER:
         # 游戏结束状态
-        font = Font("C:\Windows\Fonts\simkai.ttf", 28)
+        font = Font("C:\\Windows\\Fonts\\simkai.ttf", 28)
         text = font.render("测试结束，点击空格键重新开始", True, BLACK)
         text_rect = text.get_rect(center=screen.get_rect().center)
         screen.blit(text, text_rect)
@@ -118,7 +121,7 @@ def handle_events(grid, start, end):
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
-            quit()
+            sys.exit()
         elif event.type == MOUSEBUTTONDOWN:
             pos = pygame.mouse.get_pos()
             row = pos[1] // (HEIGHT + MARGIN)
@@ -266,3 +269,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+# pyinstaller -F -w -i zzx.ico AStar.py
