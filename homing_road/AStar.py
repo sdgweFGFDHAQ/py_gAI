@@ -90,13 +90,13 @@ def set_app_state(screen, state):
     current_state = state
     if current_state == STATE_START:
         # 游戏开始状态
-        font = Font("C:\Windows\Fonts\simkai.ttf", 32)
+        font = Font("C:\Windows\Fonts\simkai.ttf", 28)
         text = font.render("点击空格键开始测试", True, BLACK)
         text_rect = text.get_rect(center=screen.get_rect().center)
         screen.blit(text, text_rect)
     elif current_state == STATE_HELP:
         # 帮助状态
-        font = Font("C:\Windows\Fonts\simkai.ttf", 28)
+        font = Font(r"C:\Windows\Fonts\simkai.ttf", 24)
         text = font.render("这是一个简单的 A*算法 寻路测试\n"
                            "使用鼠标左键放置/取消障碍物\n"
                            "使用鼠标右键放置起点及终点，并可用左键取消", True, BLACK)
@@ -107,7 +107,7 @@ def set_app_state(screen, state):
         pass
     elif current_state == STATE_GAME_OVER:
         # 游戏结束状态
-        font = Font("C:\Windows\Fonts\simkai.ttf", 32)
+        font = Font("C:\Windows\Fonts\simkai.ttf", 28)
         text = font.render("测试结束，点击空格键重新开始", True, BLACK)
         text_rect = text.get_rect(center=screen.get_rect().center)
         screen.blit(text, text_rect)
