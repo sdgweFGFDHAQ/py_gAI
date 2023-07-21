@@ -19,13 +19,13 @@ BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
 
 # 单元格尺寸
-WIDTH = 20
-HEIGHT = 20
+WIDTH = 25
+HEIGHT = 25
 # 边框粗细
 MARGIN = 2
 # 地图大小
-ROWS = 30
-COLS = 40
+ROWS = 20
+COLS = 30
 WINDOW_SIZE = [(MARGIN + WIDTH) * COLS + MARGIN, (MARGIN + HEIGHT) * ROWS + MARGIN]
 
 # 默认起点和终点
@@ -49,7 +49,8 @@ STOP_STATE = -1
 START_STATE = 1
 PAUSE_STATE = 0
 
-prefix = "E:\\pyProjects\\py_gAI\\homing_road\\"
+prefix = "E:\\pyProjects\\py_gAI\\homing_road\\resources\\"
+prefix = "./resources/"
 background = pygame.transform.scale(pygame.image.load(prefix + r"city.png"),WINDOW_SIZE)
 obstacle = pygame.transform.scale(pygame.image.load(prefix + r"obstacle.png"),(WIDTH, HEIGHT))
 role = pygame.transform.scale(pygame.image.load(prefix + r"lxb.png"), (WIDTH, HEIGHT))
@@ -284,4 +285,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-# pyinstaller -F -w -i zzx.ico AStar.py
+# pyinstaller --add-data 'resources:resources' -F -w -i zzx.ico AStar.py
