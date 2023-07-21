@@ -1,3 +1,4 @@
+from datetime import datetime
 import pygame
 from pygame.font import Font
 from pygame.locals import *
@@ -6,8 +7,8 @@ import heapq
 
 # 全局初始化
 pygame.init()
+pygame.freetype.init()
 clock = time.Clock()
-font = Font(None, 32)
 
 # 颜色配置
 BLACK = (0, 0, 0)
@@ -15,6 +16,7 @@ WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
+YELLOW = (255, 255, 0)
 
 # 单元格尺寸
 WIDTH = 20
@@ -88,12 +90,16 @@ def set_app_state(screen, state):
     current_state = state
     if current_state == STATE_START:
         # 游戏开始状态
-        text = font.render("点击空格键开始游戏", True, WHITE)
+        font = Font("C:\Windows\Fonts\simkai.ttf", 32)
+        text = font.render("点击空格键开始测试", True, BLACK)
         text_rect = text.get_rect(center=screen.get_rect().center)
         screen.blit(text, text_rect)
     elif current_state == STATE_HELP:
         # 帮助状态
-        text = font.render("这是一个简单的 A*算法 寻路测试", True, WHITE)
+        font = Font("C:\Windows\Fonts\simkai.ttf", 28)
+        text = font.render("这是一个简单的 A*算法 寻路测试\n"
+                           "使用鼠标左键放置/取消障碍物\n"
+                           "使用鼠标右键放置起点及终点，并可用左键取消", True, BLACK)
         text_rect = text.get_rect(center=screen.get_rect().center)
         screen.blit(text, text_rect)
     elif current_state == STATE_PLAYING:
@@ -101,13 +107,14 @@ def set_app_state(screen, state):
         pass
     elif current_state == STATE_GAME_OVER:
         # 游戏结束状态
-        text = font.render("游戏结束，点击空格键重新开始", True, WHITE)
+        font = Font("C:\Windows\Fonts\simkai.ttf", 32)
+        text = font.render("测试结束，点击空格键重新开始", True, BLACK)
         text_rect = text.get_rect(center=screen.get_rect().center)
         screen.blit(text, text_rect)
 
 
-def handle_events(screen, grid, start, end):
-    game_state = False
+def handle_events(grid, start, end):
+    temp_game_state = game_state
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
@@ -137,14 +144,22 @@ def handle_events(screen, grid, start, end):
         elif event.type == KEYDOWN:
             if event.key == K_SPACE:
                 if current_state == STATE_START:
-                    set_app_state(screen, STATE_PLAYING)
-                elif current_state == STATE_HELP:
-                    set_app_state(screen, STATE_PLAYING)
+                    temp_game_state = STATE_PLAYING
+                    print("{}:测试开始".format(datetime.now().strftime("%H:%M:%S")))
                 elif current_state == STATE_PLAYING:
+                    print("{}:测试ing".format(datetime.now().strftime("%H:%M:%S")))
                     pass
                 elif current_state == STATE_GAME_OVER:
-                    set_app_state(screen, STATE_START)
-    return game_state, start, end
+                    temp_game_state = STATE_START
+                    print("{}:测试结束".format(datetime.now().strftime("%H:%M:%S")))
+            elif event.key == K_h or event.unicode == u"h":
+                if current_state != STATE_HELP:
+                    temp_game_state = STATE_HELP
+                    print("{}:查看帮助".format(datetime.now().strftime("%H:%M:%S")))
+                else:
+                    temp_game_state = STATE_PLAYING
+                    print("{}:关闭帮助".format(datetime.now().strftime("%H:%M:%S")))
+    return temp_game_state, start, end
 
 
 # 曼哈顿距离
@@ -228,15 +243,18 @@ def main():
     screen = pygame.display.set_mode(WINDOW_SIZE)
     grid = Grid()
 
-    set_app_state(screen, STATE_START)
+    global game_state
+    game_state = STATE_START
     running = False
     start = None
     end = None
     while not running:
         # 处理事件
-        game_state, start, end = handle_events(screen, grid, start, end)
+        tgs, start, end = handle_events(grid, start, end)
+        game_state = tgs
         # 绘制地图
         grid.draw(screen)
+        set_app_state(screen, game_state)
         if start is not None and end is not None:
             path = astar(start, end, grid)
             if path:
