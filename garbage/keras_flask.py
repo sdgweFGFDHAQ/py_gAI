@@ -51,9 +51,9 @@ def predict():
     convertImage(imgData)
     # 读取图片
     logging.info("读取图片")
-    x = imread('output.png', mode='L')
+    x = imread('output.png', pilmode='L')
     # 设置图片的规格
-    x = np.array(Image.fromarray(x).resize((28, 28) / 255))
+    x = np.array(Image.fromarray(x).resize((28, 28))) / 255
     # 可以保存最终处理好的图片
     logging.info("保存图片")
     imsave('final_image.jpg', x)
