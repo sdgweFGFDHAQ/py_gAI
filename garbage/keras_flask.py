@@ -41,7 +41,7 @@ def index():
 
 
 # 5. 定义预测函数
-@app.route('/predict', methods=['GET', 'POST'])
+@app.route('/predict/', methods=['GET', 'POST'])
 def predict():
     # 这个函数会在用户点击‘predict’按钮时触发
     # 会将输出的output.png放入模型中进行预测
