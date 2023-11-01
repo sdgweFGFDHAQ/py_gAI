@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2023/10/30 11:25
 # @Author  : zzx
-# @File    : zlj.py
+# @File    : crawler.py
 # @Software: PyCharm
 import random
 import time
@@ -12,7 +12,7 @@ import re
 
 headers = {
     'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"}
-txt_path = "mushroom.txt"
+txt_path = "mushroom0.2.txt"
 title = ''
 
 
@@ -95,3 +95,5 @@ def get_paging_content(response, file_name):
 
 if __name__ == '__main__':
     get_all_content()
+
+# https://www.weiquxs.net/xiaoshuo/44907/9819438.html
